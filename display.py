@@ -1,7 +1,7 @@
 class display:
     
-    __init__:
+    def __init__():
         pass
 
-    write(self, [bytearray]image):
+    def write(self, image):
         pass

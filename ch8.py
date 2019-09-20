@@ -9,9 +9,9 @@ CH8_INPUTS = 16
 
 ch8_rom = 0
 
-class ch8([bytearray]rom):
+class ch8():
 
-    def __init__:
+    def __init__(self, rom):
         self.opcode = 0x00
         self.pc = 0x200
         self.index = 0x00
@@ -22,8 +22,8 @@ class ch8([bytearray]rom):
         self.stack = bytearray(CH8_STACK)
         self.input = bytearray(CH8_INPUTS)
         self.timers = {
-                    delay = 0x0
-                    sound = 0x0
+                    "delay": 0x0,
+                    "sound": 0x0
                 }
         if rom == 0:
             print("ROM Data is Empty.  Bye Bye.")
@@ -45,7 +45,7 @@ class ch8([bytearray]rom):
     def set_input(self):
         self.input
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     
     # Initialize ROM from source
 
