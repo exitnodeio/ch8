@@ -15,7 +15,7 @@ class display:
             self.pixel_size = self.window_x / self.x
         
         self.screen = pygame.display.set_mode((self.window_x, self.window_y))
-        self.pixel = pygame.Surface((self.x, self.y), depth=1)
+        self.pixel = pygame.Surface((self.x, self.y))
 
 
     def draw(self, image):
@@ -25,3 +25,6 @@ class display:
                 self.pixel.fill((0, 0, 0))
             else:
                 self.pixel.fill((255, 255, 255))
+
+    def clear():
+        pass
