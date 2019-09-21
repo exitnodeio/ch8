@@ -117,6 +117,90 @@ class ch8():
         if self.registers[self.opcode & 0x0F00 >> 2] == self.registers[self.opcode & 0x00F0 >> 1]:
             self.pc += 2
 
+    def put_in_reg:
+        pass
+
+    def add_in_reg:
+        pass
+
+    def logical_ops:
+        pass
+
+    def skip_next_if_ne_reg:
+        pass
+
+    def set_index:
+        pass
+
+    def jump_add_v0:
+        pass
+
+    def and_with_rand:
+        pass
+
+    def disp_sprite:
+        pass
+
+    def process_key:
+        pass
+
+    def misfits:
+        pass
+
+    def set_eq_to:
+        pass
+
+    def x_or_y:
+        pass
+
+    def x_and_y:
+        pass
+
+    def x_xor_y:
+        pass
+
+    def x_add_y_carry:
+        pass
+
+    def x_sub_y:
+        pass
+
+    def div_by_two:
+        pass
+
+    def y_sub_x:
+        pass
+
+    def mult_by_two:
+        pass
+
+    def get_delay_timer:
+        pass
+
+    def wait_for_key:
+        pass
+
+    def set_delay_timer:
+        pass
+
+    def set_sound_timer:
+        pass
+
+    def add_index:
+        pass
+
+    def set_index_to_font:
+        pass
+
+    def store_bcd:
+        pass
+
+    def write_reg_to_mem:
+        pass
+
+    def read_reg_from_mem:
+        pass
+
 
 if __name__ == "__main__":
     
