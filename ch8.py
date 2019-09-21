@@ -1,5 +1,5 @@
 from fontset import fonts as FONTS
-from display import display
+from display import display as osdisplay
 
 CH8_DISPLAY = 64 * 32
 CH8_MEMORY = 4096
@@ -18,13 +18,16 @@ class ch8():
         self.sp = 0x00
         self.memory = bytearray(CH8_MEMORY)
         self.registers = bytearray(CH8_REGISTERS)
-        self.display = bytearray(CH8_DISPLAY)
+        self.image = bytearray(CH8_DISPLAY)
+        self.display = osdisplay(64, 32)
         self.stack = bytearray(CH8_STACK)
         self.input = bytearray(CH8_INPUTS)
         self.timers = {
                     "delay": 0x0,
                     "sound": 0x0
                 }
+        self.draw = False
+
         if rom == 0:
             print("ROM Data is Empty.  Bye Bye.")
             quit()
@@ -53,5 +56,8 @@ if __name__ == "__main__":
 
     while(True):
 
+
         chate.cycle()
+        if chate.draw:
+            chate.display.draw(chate.image)
         chate.set_input()
