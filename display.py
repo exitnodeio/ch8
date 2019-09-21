@@ -2,29 +2,29 @@ import pygame
 
 class display:
     
-    def __init__(self, x, y):
+    def __init__(self, x, y, win_x, win_y):
         self.x = x
         self.y = y
 
-        self.window_x = 256
-        self.window_y = 128
+        self.window_x = win_x
+        self.window_y = win_y
 
-        if (self.window_x / self.window_y) > (self.x / self.y):
-            self.pixel_size = self.window_y / self.y
-        else:
-            self.pixel_size = self.window_x / self.x
-        
         self.screen = pygame.display.set_mode((self.window_x, self.window_y))
-        self.pixel = pygame.Surface((self.x, self.y))
+        self.surf = pygame.Surface((self.x, self.y))
 
 
     def draw(self, image):
         
-        for i in range(len(self.image)):
-            if self.image[i] == 0:
-                self.pixel.fill((0, 0, 0))
-            else:
-                self.pixel.fill((255, 255, 255))
+        for i in range(len(image)):
+            color = image[i] & 0x0001
+            print(color)
+            self.surf.set_at((i % self.x, i // self.y), color)
 
+        self.blit_surf()
+     
     def clear(self):
-        pass
+        self.surf.fill((0,0,0))
+        self.blit_surf()
+
+    def blit_surf(self):
+        self.screen.blit(pygame.transform.scale(self.surf, (self.window_x, self.window_y)), (0,0))

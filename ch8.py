@@ -20,7 +20,7 @@ class ch8():
         self.memory = bytearray(CH8_MEMORY)
         self.registers = bytearray(CH8_REGISTERS)
         self.image = bytearray(CH8_DISPLAY)
-        self.display = osdisplay(64, 32)
+        self.display = osdisplay(64, 32, 1024, 512)
         self.stack = bytearray(CH8_STACK)
         self.input = bytearray(CH8_INPUTS)
         self.timers = {
