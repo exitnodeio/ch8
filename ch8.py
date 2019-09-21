@@ -1,3 +1,4 @@
+import random
 from fontset import fonts as FONTS
 from display import display as osdisplay
 
@@ -12,7 +13,7 @@ ch8_rom = b'\x00\xe0\x63\x00\x64\x01\x65\xee\x35\xee\x13\x10\x63\x00\x64\x02\x65
 class ch8():
 
     def __init__(self, rom):
-        self.opcode = 0x00
+        self.opcode = 0x0000
         self.pc = 0x200
         self.index = 0x00
         self.sp = 0x00
@@ -35,40 +36,40 @@ class ch8():
                     0x3: self.skip_next_if_eq,
                     0x4: self.skip_next_if_ne,
                     0x5: self.skip_next_if_eq_reg,
-                  #  0x6: self.put_in_reg,
-                  #  0x7: self.add_in_reg,
-                  #  0x8: self.logical_ops,
-                  #  0x9: self.skip_next_if_ne_reg,
-                  #  0xA: self.set_index,
-                  #  0xB: self.jump_add_v0,
-                  #  0xC: self.and_with_rand,
-                  #  0xD: self.disp_sprite,
-                  #  0xE: self.process_key,
-                  #  0xF: self.misfits,
+                    0x6: self.put_in_reg,
+                    0x7: self.add_in_reg,
+                    0x8: self.logical_ops,
+                    0x9: self.skip_next_if_ne_reg,
+                    0xA: self.set_index,
+                    0xB: self.jump_add_v0,
+                    0xC: self.and_with_rand,
+                    0xD: self.disp_sprite,
+                    0xE: self.process_key,
+                    0xF: self.misfits,
                 }
 
         self.logical_op_lut = {
-                  #  0x0: self.set_eq_to,
-                  #  0x1: self.x_or_y,
-                  #  0x2: self.x_and_y,
-                  #  0x3: self.x_xor_y,
-                  #  0x4: self.x_add_y_carry,
-                  #  0x5: self.x_sub_y,
-                  #  0x6: self.div_by_two,
-                  #  0x7: self.y_sub_x,
-                  #  0xE: self.mult_by_two,
+                    0x0: self.set_eq_to,
+                    0x1: self.x_or_y,
+                    0x2: self.x_and_y,
+                    0x3: self.x_xor_y,
+                    0x4: self.x_add_y_carry,
+                    0x5: self.x_sub_y,
+                    0x6: self.div_by_two,
+                    0x7: self.y_sub_x,
+                    0xE: self.mult_by_two,
                 }
 
         self.misfit_op_lut = {
-                  #  0x07: self.get_delay_timer,
-                  #  0x0A: self.wait_for_key,
-                  #  0x15: self.set_delay_timer,
-                  #  0x18: self.set_sound_timer,
-                  #  0x1E: self.add_index,
-                  #  0x29: self.set_index_to_font,
-                  #  0x33: self.store_bcd,
-                  #  0x55: self.write_reg_to_mem,
-                  #  0x65: self.read_reg_from_mem,
+                    0x07: self.get_delay_timer,
+                    0x0A: self.wait_for_key,
+                    0x15: self.set_delay_timer,
+                    0x18: self.set_sound_timer,
+                    0x1E: self.add_index,
+                    0x29: self.set_index_to_font,
+                    0x33: self.store_bcd,
+                    0x55: self.write_reg_to_mem,
+                    0x65: self.read_reg_from_mem,
                 }
 
         if rom == 0:
@@ -86,6 +87,9 @@ class ch8():
     def cycle(self):
         # Assign opcode by shifting first byte left by 8 bits, and assigning the second byte to the 8 LSBs.
         self.opcode = self.memory[self.pc] << 8 | self.memory[self.pc + 1]
+        print(hex(self.opcode))
+        self.op_lut[(self.opcode & 0xF000) >> 12]()
+        self.pc += 2
 
     def logical_ops(self):
         op = self.opcode & 0x000F
@@ -106,99 +110,95 @@ class ch8():
         self.sp = len(self.stack)
     
     def skip_next_if_eq(self):
-        if (self.opcode & 0x00FF) == self.registers[self.opcode & 0x0F00 >> 2]:
+        if (self.opcode & 0x00FF) == self.registers[self.opcode & 0x0F00 >> 8]:
             self.pc += 2
 
     def skip_next_if_ne(self):
-        if (self.opcode & 0x00FF) != self.registers[self.opcode & 0x0F00 >> 2]:
+        if (self.opcode & 0x00FF) != self.registers[self.opcode & 0x0F00 >> 8]:
             self.pc += 2
 
     def skip_next_if_eq_reg(self):
-        if self.registers[self.opcode & 0x0F00 >> 2] == self.registers[self.opcode & 0x00F0 >> 1]:
+        if self.registers[self.opcode & 0x0F00 >> 8] == self.registers[self.opcode & 0x00F0 >> 4]:
             self.pc += 2
 
-    def put_in_reg:
+    def put_in_reg(self):
+        self.registers[self.opcode & 0x0F00 >> 8] = self.opcode & 0x00FF
+
+    def add_in_reg(self):
+        self.registers[self.opcode & 0x0F00 >> 8] += self.registers[self.opcode & 0x00FF]
+
+    def skip_next_if_ne_reg(self):
+        if self.registers[self.opcode & 0x0F00 >> 8] != self.registers[self.opcode & 0x00F0 >> 4]:
+            self.pc += 2
+
+    def set_index(self):
+        self.index = self.opcode & 0x0FFF
+
+    def jump_add_v0(self):
+        self.pc = self.opcode & 0x0FFF + self.registers[0]
+
+    def and_with_rand(self):
+        val = self.opcode & 0x0F00 >> 8
+        self.registers[val] = self.registers[val] & random.randint(0,255)
+
+    def disp_sprite(self):
         pass
 
-    def add_in_reg:
+    def process_key(self):
         pass
 
-    def logical_ops:
+    def set_eq_to(self):
         pass
 
-    def skip_next_if_ne_reg:
+    def x_or_y(self):
         pass
 
-    def set_index:
+    def x_and_y(self):
         pass
 
-    def jump_add_v0:
+    def x_xor_y(self):
         pass
 
-    def and_with_rand:
+    def x_add_y_carry(self):
         pass
 
-    def disp_sprite:
+    def x_sub_y(self):
         pass
 
-    def process_key:
+    def div_by_two(self):
         pass
 
-    def misfits:
+    def y_sub_x(self):
         pass
 
-    def set_eq_to:
+    def mult_by_two(self):
         pass
 
-    def x_or_y:
+    def get_delay_timer(self):
         pass
 
-    def x_and_y:
+    def wait_for_key(self):
         pass
 
-    def x_xor_y:
+    def set_delay_timer(self):
         pass
 
-    def x_add_y_carry:
+    def set_sound_timer(self):
         pass
 
-    def x_sub_y:
+    def add_index(self):
         pass
 
-    def div_by_two:
+    def set_index_to_font(self):
         pass
 
-    def y_sub_x:
+    def store_bcd(self):
         pass
 
-    def mult_by_two:
+    def write_reg_to_mem(self):
         pass
 
-    def get_delay_timer:
-        pass
-
-    def wait_for_key:
-        pass
-
-    def set_delay_timer:
-        pass
-
-    def set_sound_timer:
-        pass
-
-    def add_index:
-        pass
-
-    def set_index_to_font:
-        pass
-
-    def store_bcd:
-        pass
-
-    def write_reg_to_mem:
-        pass
-
-    def read_reg_from_mem:
+    def read_reg_from_mem(self):
         pass
 
 

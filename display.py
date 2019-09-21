@@ -26,5 +26,5 @@ class display:
             else:
                 self.pixel.fill((255, 255, 255))
 
-    def clear():
+    def clear(self):
         pass
