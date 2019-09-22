@@ -23,6 +23,7 @@ class ch8():
         self.display = osdisplay(64, 32, 1024, 512)
         self.stack = bytearray(CH8_STACK)
         self.input = bytearray(CH8_INPUTS)
+        self.draw = False
         self.timers = {
                     "delay": 0x0,
                     "sound": 0x0
@@ -87,7 +88,8 @@ class ch8():
     def cycle(self):
         # Assign opcode by shifting first byte left by 8 bits, and assigning the second byte to the 8 LSBs.
         self.opcode = self.memory[self.pc] << 8 | self.memory[self.pc + 1]
-        print(hex(self.opcode))
+        if self.opcode != 0:
+            print(hex(self.opcode))
         self.op_lut[(self.opcode & 0xF000) >> 12]()
         self.pc += 2
 
@@ -99,8 +101,30 @@ class ch8():
         op = self.opcode & 0x00FF
         self.misfit_op_lut[op]()
 
+    def access_pixel(self, x, y, mode):
+        # If mode == True, set pixel and return True for collision
+        # If mode == False, return pixel
+
+        bit_shift = 7 - (x % 8)
+        byte = (x + 1) * (y + 1) // 8
+        byte = (y * 64 + x) // 8
+
+        curr_value = (self.image[byte] >> bit_shift) & 0x01
+
+        #print("shift: {} byte: {} curr_val: {}".format(bit_shift, byte, curr_value))
+
+        if not mode:
+            return curr_value
+        else:
+            self.image[byte] ^= (0x01 << bit_shift)
+            if curr_value == 1:
+                return 1
+            else:
+                return 0
+    
     def clear_disp(self):
         self.display.clear()
+        self.draw = True
 
     def jump_addr(self):
         self.pc = self.opcode & 0x0FFF
@@ -118,31 +142,52 @@ class ch8():
             self.pc += 2
 
     def skip_next_if_eq_reg(self):
-        if self.registers[self.opcode & 0x0F00 >> 8] == self.registers[self.opcode & 0x00F0 >> 4]:
+        if self.registers[(self.opcode & 0x0F00) >> 8] == self.registers[(self.opcode & 0x00F0) >> 4]:
             self.pc += 2
 
     def put_in_reg(self):
-        self.registers[self.opcode & 0x0F00 >> 8] = self.opcode & 0x00FF
+        self.registers[(self.opcode & 0x0F00) >> 8] = self.opcode & 0x00FF
 
     def add_in_reg(self):
-        self.registers[self.opcode & 0x0F00 >> 8] += self.registers[self.opcode & 0x00FF]
+        self.registers[(self.opcode & 0x0F00) >> 8] += self.registers[self.opcode & 0x00FF]
 
     def skip_next_if_ne_reg(self):
-        if self.registers[self.opcode & 0x0F00 >> 8] != self.registers[self.opcode & 0x00F0 >> 4]:
+        if self.registers[(self.opcode & 0x0F00) >> 8] != self.registers[(self.opcode & 0x00F0) >> 4]:
             self.pc += 2
 
     def set_index(self):
         self.index = self.opcode & 0x0FFF
 
     def jump_add_v0(self):
-        self.pc = self.opcode & 0x0FFF + self.registers[0]
+        self.pc = (self.opcode & 0x0FFF) + self.registers[0]
 
     def and_with_rand(self):
-        val = self.opcode & 0x0F00 >> 8
+        val = (self.opcode & 0x0F00) >> 8
         self.registers[val] = self.registers[val] & random.randint(0,255)
 
     def disp_sprite(self):
-        pass
+        sprite_addr = self.index
+        num_bytes = self.opcode & 0x000F
+        xpos = self.registers[(self.opcode & 0x0F00) >> 8]
+        ypos = self.registers[(self.opcode & 0x00F0) >> 4]
+
+        sprite = self.memory[(sprite_addr):(sprite_addr + num_bytes)]
+
+        for i in range(len(sprite)):
+            for j in reversed(range(8)):
+                pixel = (sprite[i] >> j) & 0x01
+                if pixel == 1:
+                    x = xpos + j 
+                    y = ypos + i
+                    #print("x: {} y: {} i: {} j: {}".format(xpos, ypos, i, j))
+                    try:
+                        self.registers[15] = self.access_pixel(x, y, True)
+                    except:
+                        pass
+                    #print("VF: {}".format(self.registers[15]))
+        
+            print(bin(sprite[i]))
+        self.draw = True
 
     def process_key(self):
         pass
@@ -190,7 +235,11 @@ class ch8():
         pass
 
     def set_index_to_font(self):
-        pass
+        byte_length = 0x05
+        digit = (self.opcode & 0x0F00) >> 8
+        self.index = 0x50 + (byte_length * digit)
+
+        #print("index: {} digit: {}".format(self.index, digit))
 
     def store_bcd(self):
         pass
@@ -214,4 +263,5 @@ if __name__ == "__main__":
         chate.cycle()
         if chate.draw:
             chate.display.draw(chate.image)
+            chate.draw = False
         #chate.set_input()
