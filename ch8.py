@@ -90,6 +90,7 @@ class ch8():
         self.opcode = self.memory[self.pc] << 8 | self.memory[self.pc + 1]
         if self.opcode != 0:
             print(hex(self.opcode))
+            pass
         self.op_lut[(self.opcode & 0xF000) >> 12]()
         self.pc += 2
 
@@ -105,9 +106,8 @@ class ch8():
         # If mode == True, set pixel and return True for collision
         # If mode == False, return pixel
 
-        bit_shift = 7 - (x % 8)
-        byte = (x + 1) * (y + 1) // 8
-        byte = (y * 64 + x) // 8
+        bit_shift = (x % 8)
+        byte = ((y * 64 + x) // 8)
 
         curr_value = (self.image[byte] >> bit_shift) & 0x01
 
@@ -134,11 +134,11 @@ class ch8():
         self.sp = len(self.stack)
     
     def skip_next_if_eq(self):
-        if (self.opcode & 0x00FF) == self.registers[self.opcode & 0x0F00 >> 8]:
+        if (self.opcode & 0x00FF) == self.registers[(self.opcode & 0x0F00) >> 8]:
             self.pc += 2
 
     def skip_next_if_ne(self):
-        if (self.opcode & 0x00FF) != self.registers[self.opcode & 0x0F00 >> 8]:
+        if (self.opcode & 0x00FF) != self.registers[(self.opcode & 0x0F00) >> 8]:
             self.pc += 2
 
     def skip_next_if_eq_reg(self):
@@ -149,7 +149,7 @@ class ch8():
         self.registers[(self.opcode & 0x0F00) >> 8] = self.opcode & 0x00FF
 
     def add_in_reg(self):
-        self.registers[(self.opcode & 0x0F00) >> 8] += self.registers[self.opcode & 0x00FF]
+        self.registers[(self.opcode & 0x0F00) >> 8] += (self.opcode & 0x00FF)
 
     def skip_next_if_ne_reg(self):
         if self.registers[(self.opcode & 0x0F00) >> 8] != self.registers[(self.opcode & 0x00F0) >> 4]:
@@ -177,16 +177,10 @@ class ch8():
             for j in reversed(range(8)):
                 pixel = (sprite[i] >> j) & 0x01
                 if pixel == 1:
-                    x = xpos + j 
+                    x = xpos + 8 - j 
                     y = ypos + i
-                    #print("x: {} y: {} i: {} j: {}".format(xpos, ypos, i, j))
-                    try:
-                        self.registers[15] = self.access_pixel(x, y, True)
-                    except:
-                        pass
-                    #print("VF: {}".format(self.registers[15]))
+                    self.registers[15] = self.access_pixel(x, y, True)
         
-            print(bin(sprite[i]))
         self.draw = True
 
     def process_key(self):
@@ -239,7 +233,7 @@ class ch8():
         digit = (self.opcode & 0x0F00) >> 8
         self.index = 0x50 + (byte_length * digit)
 
-        #print("index: {} digit: {}".format(self.index, digit))
+        print("Writing {}".format(digit))
 
     def store_bcd(self):
         pass
@@ -264,4 +258,5 @@ if __name__ == "__main__":
         if chate.draw:
             chate.display.draw(chate.image)
             chate.draw = False
+        #input()
         #chate.set_input()
