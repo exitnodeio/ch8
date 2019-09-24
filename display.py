@@ -1,6 +1,6 @@
 import pygame
 
-class display:
+class display():
     
     def __init__(self, x, y, win_x, win_y):
         self.x = x
@@ -10,6 +10,15 @@ class display:
         self.window_y = win_y
         self.bytes_per_frame = int(self.x * self.y / 8)
 
+        self.state = {
+                'pc':'',
+                'op':'',
+                'registers':'',
+                'index':'',
+                'sp':'',
+                'stack':'',
+                'mem_part':'',
+                }
 
         self.screen = pygame.display.set_mode((self.window_x, self.window_y))
         self.surf = pygame.Surface((self.x, self.y))

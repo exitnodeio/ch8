@@ -1,14 +1,22 @@
+#!/usr/bin/python
+### Lazy Generate Byte String
+# for i in $(xxd -c 1 Particle\ Demo\ \[zeroZshadow\,\ 2008\].ch8 | cut -d ' ' -f 2); do echo -n "\x$i"; done; echo
 import random
+import os.path
 from fontset import fonts as FONTS
 from display import display as osdisplay
 
 CH8_DISPLAY = 64 * 32
 CH8_MEMORY = 4096
 CH8_REGISTERS = 16
-CH8_STACK = 16
+CH8_STACK = 16 * 2
 CH8_INPUTS = 16
 
-ch8_rom = b'\x00\xe0\x63\x00\x64\x01\x65\xee\x35\xee\x13\x10\x63\x00\x64\x02\x65\xee\x66\xee\x55\x60\x13\x10\x63\x00\x64\x03\x65\xee\x45\xfd\x13\x10\x63\x00\x64\x04\x65\xee\x75\x01\x35\xef\x13\x10\x63\x00\x64\x05\x6f\x01\x65\xee\x66\xef\x85\x65\x3f\x00\x13\x10\x63\x00\x64\x06\x6f\x00\x65\xef\x66\xee\x85\x65\x3f\x01\x13\x10\x6f\x00\x63\x00\x64\x07\x65\xee\x66\xef\x85\x67\x3f\x01\x13\x10\x63\x00\x64\x08\x6f\x01\x65\xef\x66\xee\x85\x67\x3f\x00\x13\x10\x63\x00\x64\x09\x65\xf0\x66\x0f\x85\x61\x35\xff\x13\x10\x63\x01\x64\x00\x65\xf0\x66\x0f\x85\x62\x35\x00\x13\x10\x63\x01\x64\x01\x65\xf0\x66\x0f\x85\x63\x35\xff\x13\x10\x6f\x00\x63\x01\x64\x02\x65\x81\x85\x0e\x3f\x01\x13\x10\x63\x01\x64\x03\x6f\x01\x65\x47\x85\x0e\x3f\x00\x13\x10\x63\x01\x64\x04\x6f\x00\x65\x01\x85\x06\x3f\x01\x13\x10\x63\x01\x64\x05\x6f\x01\x65\x02\x85\x06\x3f\x00\x13\x10\x63\x01\x64\x06\x60\x15\x61\x78\xa3\xd0\xf1\x55\xf1\x65\x30\x15\x13\x10\x31\x78\x13\x10\x63\x01\x64\x07\x60\x8a\xa3\xd0\xf0\x33\xa3\xd0\xf0\x65\x30\x01\x13\x10\x60\x01\xf0\x1e\xf0\x65\x30\x03\x13\x10\x60\x01\xf0\x1e\xf0\x65\x30\x08\x13\x10\x13\x32\x13\x0e\xa3\x2a\x60\x13\x61\x09\xd0\x18\xf3\x29\x60\x22\x61\x0b\xd0\x15\xf4\x29\x60\x28\x61\x0b\xd0\x15\x13\x0e\xff\xf0\xf0\xff\xf0\xf0\xf0\xff\xa3\x58\x60\x15\x61\x0b\x63\x08\xd0\x18\x70\x08\xf3\x1e\x30\x2d\x13\x3a\xa3\x70\x60\x02\x61\x18\x63\x08\xd0\x18\x70\x05\xf3\x1e\x30\x3e\x13\x4c\x13\x0e\xf0\x88\x88\xf0\x88\x88\x88\xf0\x78\x84\x84\x84\x84\x84\x84\x78\x84\xc4\xa4\x94\x8c\x84\x84\x84\xc0\xa0\xa0\xc0\xa0\xa0\xc0\x00\x00\x00\xa0\xa0\xe0\x20\x20\xe0\x00\x00\x00\x00\x00\x00\x00\x00\xc0\xa0\xa0\xc0\xa0\xa0\xc0\x00\x00\x00\x60\xa0\xc0\x80\x60\x00\x00\x00\x60\x80\x40\x20\xc0\x00\x80\x80\xc0\x80\x80\x80\x60\x00\xe0\x80\x80\x80\x80\x80\xe0\x00\x00\x00\x40\xa0\xa0\xa0\x40\x00\x20\x20\x20\x60\xa0\xa0\x60\x00\x00\x00\x60\xa0\xc0\x80\x60\x00\x00\x00\x00\x60\x40\x40\x50\x00\x00\x00\x00\x00\x00\x00'
+ch8_rom = b'\xa3\x21\x60\x00\x61\x00\x62\x08\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\xf2\x1e\x80\x24\xd0\x15\x66\x05\x67\x02\x6a\x00\x12\xb8\x6b\x00\x6c\x00\xa2\xd8\xfb\x1e\xf3\x65\x22\xce\x22\x5c\x12\x62\x22\xce\x22\x5c\x7b\x04\x7c\x01\x5c\x60\x12\x40\x12\x3c\x12\x00\xa3\x20\xde\xd1\x00\xee\xa2\xd8\xfb\x1e\xf3\x65\x80\x24\x81\x34\x8e\x00\x8d\x10\x8e\xe6\x8d\xd6\x84\xe0\x65\xc2\x84\x54\x4f\x01\x12\x92\x4d\x00\x63\x01\x84\xd0\x65\xe1\x84\x54\x4f\x01\x12\x92\x33\x02\x73\x01\x12\x94\x22\x9c\xa2\xd8\xfb\x1e\xf3\x55\x12\x4c\xa3\x00\xfa\x1e\xf0\x65\x82\x00\x7a\x01\x64\x1f\x8a\x42\x60\x20\x61\x1e\x80\x0e\x81\x1e\xc3\x03\x73\xf8\x00\xee\x6b\x00\x6c\x00\x22\x9c\xa2\xd8\xfb\x1e\xf3\x55\x7b\x04\x7c\x01\x5c\x60\x12\xbc\x12\x3c\x8e\x00\x8d\x10\x8e\xe6\x8d\xd6\x00\xee\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf8\xfa\xf9\xfe\xfb\xfc\xfd\xff\x02\x01\x03\x05\x04\x06\x07\x08\x06\x07\x04\x05\x03\x01\x02\xfe\xff\xfc\xfb\xfd\xfa\xf9\xf8\xfa\x80\xf7\x06\x77\x06\x36\x00\x00\x00\xc7\x6c\xcf\x0c\x0c\x00\x00\x00\x9f\xd9\xdf\xd9\xd9\x00\x00\x00\x3f\x8c\x0c\x8c\x8c\x00\x00\x00\x67\x6c\x6c\x6c\x67\x00\x00\x00\xb0\x30\x30\x30\xbe\x00\x00\x00\xf9\xc3\xf1\xc0\xfb\x00\x00\x00\xef\x00\xce\x60\xcc\x00\x00\x00'
+
+if os.path.exists('rom.ch8'):
+    with open("rom.ch8", "rb") as rom:
+        ch8_rom = bytearray(rom.read())
 
 class ch8():
 
@@ -28,7 +36,6 @@ class ch8():
                     "delay": 0x0,
                     "sound": 0x0
                 }
-        self.draw = False
 
         self.op_lut = {
                     0x0: self.clear_disp,
@@ -123,49 +130,84 @@ class ch8():
                 return 0
     
     def clear_disp(self):
+        """00E0 Clear the screen
+        """
         self.display.clear()
         self.draw = True
 
     def jump_addr(self):
+        """1NNN Jump to address NNN
+        """
         self.pc = self.opcode & 0x0FFF
 
     def call_sub(self):
-        self.stack.append(self.pc)
-        self.sp = len(self.stack)
+        """2NNN Execute subroutine starting at address NNN
+        """
+        self.stack.append((self.pc & 0xFF00) >> 8)
+        self.stack.append(self.pc & 0x00FF)
+        self.pc = (self.opcode & 0x0FFF)
+        self.sp += 2
     
     def skip_next_if_eq(self):
+        """3XNN Skip the following instruction if the value of register VX equals NN
+        """
         if (self.opcode & 0x00FF) == self.registers[(self.opcode & 0x0F00) >> 8]:
             self.pc += 2
 
+        print("Is {} equal to {}?".format(hex(self.registers[(self.opcode & 0x0F00) >> 8]), hex(self.opcode & 0x00FF)))
+
     def skip_next_if_ne(self):
+        """4XNN Skip the following instruction if the value of register VX is not equal to NN
+        """
         if (self.opcode & 0x00FF) != self.registers[(self.opcode & 0x0F00) >> 8]:
             self.pc += 2
 
     def skip_next_if_eq_reg(self):
+        """5XY0 Skip the following instruction if the value of register VX is equal to the value of register VY
+        """
         if self.registers[(self.opcode & 0x0F00) >> 8] == self.registers[(self.opcode & 0x00F0) >> 4]:
             self.pc += 2
 
     def put_in_reg(self):
+        """6XNN Store number NN in register VX
+        """
+        print("Storing {} in register {}".format(self.opcode & 0x00FF, (self.opcode & 0x0F00) >> 8))
         self.registers[(self.opcode & 0x0F00) >> 8] = self.opcode & 0x00FF
+        print("V{}: {}".format((self.opcode & 0x0F00) >> 8, self.registers[(self.opcode & 0x0F00) >> 8]))
 
     def add_in_reg(self):
-        self.registers[(self.opcode & 0x0F00) >> 8] += (self.opcode & 0x00FF)
+        """7XNN Add the value NN to register VX
+        """
+        vx = (self.opcode & 0x0F00) >> 8
+        self.registers[vx] = self.registers[vx] + (self.opcode & 0x00FF) & 0xFF
+        print("Add {} to {}".format((self.opcode & 0x00FF), self.registers[vx]))
 
     def skip_next_if_ne_reg(self):
+        """9XY0 Skip the following instruction if the value of register VX is not equal to the value of register VY
+        """
         if self.registers[(self.opcode & 0x0F00) >> 8] != self.registers[(self.opcode & 0x00F0) >> 4]:
             self.pc += 2
 
     def set_index(self):
+        """ANNN Store memory address NNN in register I
+        """
         self.index = self.opcode & 0x0FFF
 
     def jump_add_v0(self):
+        """BNNN Jump to address NNN + V0
+        """
         self.pc = (self.opcode & 0x0FFF) + self.registers[0]
 
     def and_with_rand(self):
+        """CXNN Set VX to a random number with a mask of NN
+        """
         val = (self.opcode & 0x0F00) >> 8
         self.registers[val] = self.registers[val] & random.randint(0,255)
 
     def disp_sprite(self):
+        """DXYN Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
+        Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
+        """
         sprite_addr = self.index
         num_bytes = self.opcode & 0x000F
         xpos = self.registers[(self.opcode & 0x0F00) >> 8]
@@ -184,76 +226,174 @@ class ch8():
         self.draw = True
 
     def process_key(self):
+        """EX9E Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+        EXA1    Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+
+        """
         pass
 
     def set_eq_to(self):
-        pass
+        """8XY0 Store the value of register VY in register VX
+        """
+        self.registers[(self.opcode & 0x0F00) >> 8] = self.registers[(self.opcode & 0x00F0) >> 4]
 
     def x_or_y(self):
-        pass
+        """8XY1 Set VX to VX OR VY
+        """
+        self.registers[(self.opcode & 0x0F00) >> 8] |= self.registers[(self.opcode & 0x00F0) >> 4]
 
     def x_and_y(self):
-        pass
+        """8XY2 Set VX to VX AND VY
+        """
+        self.registers[(self.opcode & 0x0F00) >> 8] &= self.registers[(self.opcode & 0x00F0) >> 4]
 
     def x_xor_y(self):
-        pass
+        """8XY3 Set VX to VX XOR VY
+        """
+        self.registers[(self.opcode & 0x0F00) >> 8] ^= self.registers[(self.opcode & 0x00F0) >> 4]
 
     def x_add_y_carry(self):
-        pass
+        """8XY4 Add the value of register VY to register VX
+        Set VF to 01 if a carry occurs
+        Set VF to 00 if a carry does not occur
+        """
+        vx = self.registers[(self.opcode & 0x0F00) >> 8]
+        vy = self.registers[(self.opcode & 0x00F0) >> 4]
+
+        if (vx + vy) > 0xFFFF:
+            self.registers[15] = 0x01
+            vx = (vx + vy) & 0xFFFF
+        else:
+            self.registers[15] = 0x00
+            vx = vx + vy
 
     def x_sub_y(self):
-        pass
+        """8XY5 Subtract the value of register VY from register VX
+        Set VF to 00 if a borrow occurs
+        Set VF to 01 if a borrow does not occur
+        """
+        vx = (self.opcode & 0x0F00) >> 8
+        vy = (self.opcode & 0x00F0) >> 4
+
+        print(self.registers[vx], self.registers[vy])
+        if self.registers[vx] < self.registers[vy]:
+            self.registers[0xf] = 0x0
+            self.registers[vx] = abs(self.registers[vx] - self.registers[vy]) & 0xFFFF
+        else:
+            self.registers[0xf] = 0x1
+            self.registers[vx] = self.registers[vx] - self.registers[vy]
 
     def div_by_two(self):
-        pass
+        """8XY6 Store the value of register VX shifted right one bit in register VY¹
+        Set register VF to the least significant bit prior to the shift
+        """
+        vx = self.registers[(self.opcode & 0x0F00) >> 8]
+
+        self.registers[15] = vx & 0x1
+        self.registers[(self.opcode & 0x00F0) >> 4] = (vx >> 1) & 0xFF
 
     def y_sub_x(self):
-        pass
+        """8XY7 Set register VX to the value of VY minus VX
+        Set VF to 00 if a borrow occurs
+        Set VF to 01 if a borrow does not occur
+        """
+        vx = (self.opcode & 0x0F00) >> 8
+        vy = (self.opcode & 0x00F0) >> 4
+
+        if self.registers[vy] < self.registers[vx]:
+            self.registers[15] = 0x0
+            self.registers[vx] = abs(self.registers[vy] - self.registers[vx]) & 0xFFFF
+        else:
+            self.registers[15] = 0x1
+            self.registers[vx] = self.registers[vy] - self.registers[vx]
 
     def mult_by_two(self):
-        pass
+        """8XYE Store the value of register VX shifted left one bit in register VY¹
+        Set register VF to the most significant bit prior to the shift
+        """
+        vx = self.registers[(self.opcode & 0x0F00) >> 8]
+
+        self.registers[15] = (vx >> 7) & 0x1
+        self.registers[(self.opcode & 0x00F0) >> 4] = (vx << 1) & 0xFF
 
     def get_delay_timer(self):
-        pass
+        """FX07 Store the current value of the delay timer in register VX
+        """
+        self.registers[(self.opcode & 0x0F00) >> 8] = self.timers['delay']
 
     def wait_for_key(self):
+        """FX0A Wait for a keypress and store the result in register VX
+        """
         pass
 
     def set_delay_timer(self):
-        pass
+        """FX15 Set the delay timer to the value of register VX
+        """
+        self.timers['delay'] = self.registers[(self.opcode & 0x0F00) >> 8]
 
     def set_sound_timer(self):
-        pass
+        """FX18 Set the sound timer to the value of register VX
+        """
+        self.timers['sound'] = self.registers[(self.opcode & 0x0F00) >> 8]
 
     def add_index(self):
-        pass
+        """FX1E Add the value stored in register VX to register I
+        """
+        self.index = (self.index + self.registers[(self.opcode & 0x0F00) >> 8]) & 0xFFFF
 
     def set_index_to_font(self):
+        """FX29 Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+        """
         byte_length = 0x05
         digit = (self.opcode & 0x0F00) >> 8
         self.index = 0x50 + (byte_length * digit)
 
-        print("Writing {}".format(digit))
-
     def store_bcd(self):
-        pass
+        """FX33 Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+        """
+        self.memory[self.index] = 255 // 100
+        self.memory[self.index + 1] = 254 % 100 // 10
+        self.memory[self.index + 2] = 254 % 10
+
 
     def write_reg_to_mem(self):
+        """FX55 Store the values of registers V0 to VX inclusive in memory starting at address I
+        I is set to I + X + 1 after operation²
+        """
         pass
 
     def read_reg_from_mem(self):
+        """FX65 Fill registers V0 to VX inclusive with the values stored in memory starting at address I
+        I is set to I + X + 1 after operation
+        """
         pass
 
 
 if __name__ == "__main__":
-    
+
     # Initialize ROM from source
 
     chate = ch8(ch8_rom)
 
+    chate.display.debug = True
+
     while(True):
 
+        input()
 
+        if chate.display.debug and chate.display.state:
+            state_dict = {
+                        'pc': chate.pc,
+                        'opcode': chate.opcode,
+                        'registers': chate.registers,
+                        'index': chate.index,
+                        'sp': chate.sp,
+                        'stack': chate.stack,
+                        'mem_part': chate.memory[(chate.pc - 10):(chate.pc + 10)],
+                    }
+            
+            chate.display.state = state_dict
+            
         chate.cycle()
         if chate.draw:
             chate.display.draw(chate.image)
