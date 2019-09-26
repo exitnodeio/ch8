@@ -23,7 +23,7 @@ class ch8():
     def __init__(self, rom):
         self.opcode = 0x0000
         self.pc = 0x200
-        self.index = 0x00
+        self.index = 0x000
         self.sp = 0x00
         self.memory = bytearray(CH8_MEMORY)
         self.registers = bytearray(CH8_REGISTERS)
@@ -97,8 +97,15 @@ class ch8():
         self.opcode = self.memory[self.pc] << 8 | self.memory[self.pc + 1]
         if self.opcode != 0:
             print(hex(self.opcode))
-            pass
-        self.op_lut[(self.opcode & 0xF000) >> 12]()
+        
+        try:
+            self.op_lut[(self.opcode & 0xF000) >> 12]()
+        except KeyError:
+            print("Unknown Instruction")
+
+        # Decrement timers by one each cycle to a minimum of 0
+        self.timers = {i:max(j - 1, 0) for i,j in self.timers.items()}
+
         self.pc += 2
 
     def logical_ops(self):
@@ -132,6 +139,10 @@ class ch8():
     def clear_disp(self):
         """00E0 Clear the screen
         """
+        if (self.opcode & 0x000F) == 0xE:
+            self.pc = self.stack.pop()
+            self.pc |= (self.stack.pop() << 8)
+            return
         self.display.clear()
         self.draw = True
 
@@ -181,6 +192,7 @@ class ch8():
         vx = (self.opcode & 0x0F00) >> 8
         self.registers[vx] = self.registers[vx] + (self.opcode & 0x00FF) & 0xFF
         print("Add {} to {}".format((self.opcode & 0x00FF), self.registers[vx]))
+        print(self.registers[vx])
 
     def skip_next_if_ne_reg(self):
         """9XY0 Skip the following instruction if the value of register VX is not equal to the value of register VY
@@ -257,15 +269,15 @@ class ch8():
         Set VF to 01 if a carry occurs
         Set VF to 00 if a carry does not occur
         """
-        vx = self.registers[(self.opcode & 0x0F00) >> 8]
-        vy = self.registers[(self.opcode & 0x00F0) >> 4]
+        vx = (self.opcode & 0x0F00) >> 8
+        vy = (self.opcode & 0x00F0) >> 4
 
-        if (vx + vy) > 0xFFFF:
-            self.registers[15] = 0x01
-            vx = (vx + vy) & 0xFFFF
+        if (self.registers[vx] + self.registers[vy]) > 0xFF:
+            self.registers[15] = 0x1
+            self.registers[vx] = (self.registers[vx] + self.registers[vy]) & 0xFF
         else:
-            self.registers[15] = 0x00
-            vx = vx + vy
+            self.registers[15] = 0x0
+            self.registers[vx] += self.registers[vy]
 
     def x_sub_y(self):
         """8XY5 Subtract the value of register VY from register VX
@@ -278,7 +290,7 @@ class ch8():
         print(self.registers[vx], self.registers[vy])
         if self.registers[vx] < self.registers[vy]:
             self.registers[0xf] = 0x0
-            self.registers[vx] = abs(self.registers[vx] - self.registers[vy]) & 0xFFFF
+            self.registers[vx] = (self.registers[vx] - self.registers[vy]) & 0xFF
         else:
             self.registers[0xf] = 0x1
             self.registers[vx] = self.registers[vx] - self.registers[vy]
@@ -290,7 +302,7 @@ class ch8():
         vx = self.registers[(self.opcode & 0x0F00) >> 8]
 
         self.registers[15] = vx & 0x1
-        self.registers[(self.opcode & 0x00F0) >> 4] = (vx >> 1) & 0xFF
+        self.registers[(self.opcode & 0x00F0) >> 4] = (vx >> 1)
 
     def y_sub_x(self):
         """8XY7 Set register VX to the value of VY minus VX
@@ -302,7 +314,7 @@ class ch8():
 
         if self.registers[vy] < self.registers[vx]:
             self.registers[15] = 0x0
-            self.registers[vx] = abs(self.registers[vy] - self.registers[vx]) & 0xFFFF
+            self.registers[vx] = abs(self.registers[vy] - self.registers[vx]) & 0xFF
         else:
             self.registers[15] = 0x1
             self.registers[vx] = self.registers[vy] - self.registers[vx]
@@ -339,7 +351,7 @@ class ch8():
     def add_index(self):
         """FX1E Add the value stored in register VX to register I
         """
-        self.index = (self.index + self.registers[(self.opcode & 0x0F00) >> 8]) & 0xFFFF
+        self.index = (self.index + self.registers[(self.opcode & 0x0F00) >> 8]) & 0xFFF
 
     def set_index_to_font(self):
         """FX29 Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
@@ -351,22 +363,38 @@ class ch8():
     def store_bcd(self):
         """FX33 Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
         """
-        self.memory[self.index] = 255 // 100
-        self.memory[self.index + 1] = 254 % 100 // 10
-        self.memory[self.index + 2] = 254 % 10
+        vx = (self.opcode & 0x0F00) >> 8
+        self.memory[self.index] = self.registers[vx] // 100
+        self.memory[self.index + 1] = self.registers[vx] % 100 // 10
+        self.memory[self.index + 2] = self.registers[vx] % 10
 
 
     def write_reg_to_mem(self):
         """FX55 Store the values of registers V0 to VX inclusive in memory starting at address I
         I is set to I + X + 1 after operation²
         """
-        pass
+        vx = (self.opcode & 0x0F00) >> 8
+        print(self.index)
+        for i in range(0, vx + 1):
+            self.memory[self.index + i + 1] = self.registers[i]
+            print(self.registers[i])
+        self.index += ((self.opcode & 0x0F00) >> 8)
+        for i in range(self.index - 10, self.index + 10):
+            print(i, ":", self.memory[i])
+
 
     def read_reg_from_mem(self):
         """FX65 Fill registers V0 to VX inclusive with the values stored in memory starting at address I
         I is set to I + X + 1 after operation
         """
-        pass
+        vx = (self.opcode & 0x0F00) >> 8
+        print(self.index)
+        for i in range(0, ((self.opcode & 0x0F00) >> 8) + 1):
+            self.registers[i] = self.memory[self.index + i]
+            print("writing to reg", i, "with", self.memory[self.index + i])
+        self.index += ((self.opcode & 0x0F00) >> 8) 
+        for i in range(self.index - 10, self.index + 10):
+            print(i, ":", self.memory[i])
 
 
 if __name__ == "__main__":
@@ -398,5 +426,4 @@ if __name__ == "__main__":
         if chate.draw:
             chate.display.draw(chate.image)
             chate.draw = False
-        #input()
         #chate.set_input()
