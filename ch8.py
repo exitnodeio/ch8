@@ -3,6 +3,7 @@
 # for i in $(xxd -c 1 Particle\ Demo\ \[zeroZshadow\,\ 2008\].ch8 | cut -d ' ' -f 2); do echo -n "\x$i"; done; echo
 import random
 import os.path
+import logging
 from fontset import fonts as FONTS
 from display import display as osdisplay
 
@@ -101,7 +102,7 @@ class ch8():
         try:
             self.op_lut[(self.opcode & 0xF000) >> 12]()
         except KeyError:
-            print("Unknown Instruction")
+            ("Unknown Instruction")
 
         # Decrement timers by one each cycle to a minimum of 0
         self.timers = {i:max(j - 1, 0) for i,j in self.timers.items()}
@@ -182,6 +183,17 @@ class ch8():
     def put_in_reg(self):
         """6XNN Store number NN in register VX
         """
+        self.pc += 2
+
+    def skip_next_if_eq_reg(self):
+        """5XY0 Skip the following instruction if the value of register VX is equal to the value of register VY
+        """
+        if self.registers[(self.opcode & 0x0F00) >> 8] == self.registers[(self.opcode & 0x00F0) >> 4]:
+            self.pc += 2
+
+    def put_in_reg(self):
+        """6XNN Store number NN in register VX
+        """
         print("Storing {} in register {}".format(self.opcode & 0x00FF, (self.opcode & 0x0F00) >> 8))
         self.registers[(self.opcode & 0x0F00) >> 8] = self.opcode & 0x00FF
         print("V{}: {}".format((self.opcode & 0x0F00) >> 8, self.registers[(self.opcode & 0x0F00) >> 8]))
@@ -242,8 +254,14 @@ class ch8():
         EXA1    Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
 
         """
-        pass
-
+        if (self.opcode & 0x00FF) == 0x009E:
+            if self.keymap[self.registers[(self.opcode & 0x0F00) >> 8]] in self.depressed_keys:
+                self.pc += 2
+        elif (self.opcode & 0x00FF) == 0x00A1:
+            if self.keymap[self.registers[(self.opcode & 0x0F00) >> 8]] not in self.depressed_keys:
+                self.pc += 2
+        else:
+            logger.error("Unknown input OPCODE: {}".format(self.opcode))
     def set_eq_to(self):
         """8XY0 Store the value of register VY in register VX
         """
@@ -351,8 +369,7 @@ class ch8():
     def add_index(self):
         """FX1E Add the value stored in register VX to register I
         """
-        self.index = (self.index + self.registers[(self.opcode & 0x0F00) >> 8]) & 0xFFF
-
+        self.index += self.registers[(self.opcode & 0x0F00) >> 8]
     def set_index_to_font(self):
         """FX29 Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
         """
@@ -367,8 +384,6 @@ class ch8():
         self.memory[self.index] = self.registers[vx] // 100
         self.memory[self.index + 1] = self.registers[vx] % 100 // 10
         self.memory[self.index + 2] = self.registers[vx] % 10
-
-
     def write_reg_to_mem(self):
         """FX55 Store the values of registers V0 to VX inclusive in memory starting at address I
         I is set to I + X + 1 after operation²
@@ -398,17 +413,31 @@ class ch8():
 
 
 if __name__ == "__main__":
+    import argparse
 
     # Initialize ROM from source
+    parser = argparse.ArgumentParser(description='Chip-8 Emulator')
+    parser.add_argument('rom', help='Chip-8 Binary')
+    parser.add_argument('--log-level', '-l', default='INFO', help='Python Logging Level')
+    args = parser.parse_args()
+
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=args.log_level)
+
+    if args.rom:
+        with open(args.rom, "rb") as rom:
+            ch8_rom = bytearray(rom.read())
+            logger.info("Writing to memory from " + args.rom)
+
 
     chate = ch8(ch8_rom)
 
-    chate.display.debug = True
+    chate.display.debug = False
 
     while(True):
-
-        input()
-
+        logging.debug("Beginning Cycle: PC: {} OPCODE: {} INDEX: {} SP: {}".format(hex(chate.pc), hex(chate.opcode), hex(chate.index), hex(chate.sp)))
+        #input()
+        
         if chate.display.debug and chate.display.state:
             state_dict = {
                         'pc': chate.pc,
@@ -420,10 +449,11 @@ if __name__ == "__main__":
                         'mem_part': chate.memory[(chate.pc - 10):(chate.pc + 10)],
                     }
             
-            chate.display.state = state_dict
+            #chate.display.state = state_dict
             
         chate.cycle()
         if chate.draw:
             chate.display.draw(chate.image)
             chate.draw = False
         #chate.set_input()
+        logging.debug("Cycle Complete")
